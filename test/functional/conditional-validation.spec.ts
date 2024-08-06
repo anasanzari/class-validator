@@ -1,4 +1,4 @@
-import { IsNotEmpty, ValidateIf, IsOptional, Equals } from '../../src/decorator/decorators';
+import { IsNotEmpty, ValidateIf, IsOptional, Equals, IsOptionalIf } from '../../src/decorator/decorators';
 import { Validator } from '../../src/validation/Validator';
 
 const validator = new Validator();
@@ -92,4 +92,35 @@ describe('conditional validation', () => {
       expect(errors[0].value).toEqual('bad_value');
     });
   });
+
+  it('should not validate if condition is true', () => {
+    class MyClass {
+      @IsOptionalIf(() => true)
+      @Equals('test')
+      title: string;
+    }
+
+    const model = new MyClass();
+    return validator.validate(model).then(errors => {
+      expect(errors.length).toEqual(0);
+    });
+  });
+
+  it('should validate if condition is false and value is passed', () => {
+    class MyClass {
+      @IsOptionalIf(() => false)
+      @Equals('test')
+      title: string = 'bad_value';
+    }
+
+    const model = new MyClass();
+    return validator.validate(model).then(errors => {
+      expect(errors.length).toEqual(1);
+      expect(errors[0].target).toEqual(model);
+      expect(errors[0].property).toEqual('title');
+      expect(errors[0].constraints).toEqual({ equals: 'title must be equal to test' });
+      expect(errors[0].value).toEqual('bad_value');
+    });
+  });
+
 });
